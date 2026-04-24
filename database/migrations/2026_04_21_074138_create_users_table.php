@@ -17,6 +17,11 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+
+            $table->enum('role', ['Patient', 'Staff', 'Admin'])->default('Patient');
+            $table->foreignId('patient_id')->nullable()->constrained('patients', 'patient_id')->onDelete('cascade');
+            $table->foreignId('staff_id')->nullable()->constrained('staff', 'staff_id')->onDelete('cascade');
+            
             $table->rememberToken();
             $table->timestamps();
         });

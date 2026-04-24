@@ -58,7 +58,7 @@ return new class extends Migration
             BEGIN
                 IF NEW.status = 'Completed' AND OLD.status <> 'Completed' THEN
                     INSERT INTO invoices (appointment_id, total_amount, payment_status)
-                    VALUES (NEW.appointment_id, 500.00, 'Unpaid');
+                    VALUES (NEW.appointment_id, 500.00, 'Unpaid', NOW(), NOW());
                 END IF;
             END;
         ");
