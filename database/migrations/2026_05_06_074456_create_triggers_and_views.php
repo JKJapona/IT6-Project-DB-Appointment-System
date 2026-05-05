@@ -10,7 +10,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // 1. CLEANUP: Drop existing triggers/views first
+        // 1. CLEANUP: Drop existing triggers/views first to avoid "already exists" errors
         DB::unprepared("DROP TRIGGER IF EXISTS after_appointment_insert");
         DB::unprepared("DROP TRIGGER IF EXISTS before_appointment_insert");
         DB::unprepared("DROP TRIGGER IF EXISTS after_appointment_complete");
@@ -22,9 +22,9 @@ return new class extends Migration
         DB::unprepared("DROP VIEW IF EXISTS View_Daily_Department_Load");
         DB::unprepared("DROP VIEW IF EXISTS View_Available_Doctors");
 
-        // --- YOUR EXISTING TRIGGERS (UNCHANGED) ---
+        // --- TRIGGERS ---
 
-        // 1. Trigger: Increment booked count
+        // 1. Increment booked count in schedules when a new appointment is made
         DB::unprepared("
             CREATE TRIGGER after_appointment_insert
             AFTER INSERT ON appointments
@@ -36,7 +36,7 @@ return new class extends Migration
             END;
         ");
 
-        // 2. Trigger: Check capacity
+        // 2. Prevent booking if the schedule is at max capacity
         DB::unprepared("
             CREATE TRIGGER before_appointment_insert
             BEFORE INSERT ON appointments
@@ -50,20 +50,21 @@ return new class extends Migration
             END;
         ");
 
-        // 3. Trigger: Create invoice on completion
+        // 3. Auto-generate Invoice when Appointment status is updated to 'Completed'
+        // Fixed to include Laravel's required timestamp columns
         DB::unprepared("
             CREATE TRIGGER after_appointment_complete
             AFTER UPDATE ON appointments
             FOR EACH ROW
             BEGIN
                 IF NEW.status = 'Completed' AND OLD.status <> 'Completed' THEN
-                    INSERT INTO invoices (appointment_id, total_amount, payment_status)
+                    INSERT INTO invoices (appointment_id, total_amount, payment_status, created_at, updated_at)
                     VALUES (NEW.appointment_id, 500.00, 'Unpaid', NOW(), NOW());
                 END IF;
             END;
         ");
 
-        // 4. Trigger: Decrement count on cancellation
+        // 4. Decrement booked count in schedules if an appointment is cancelled
         DB::unprepared("
             CREATE TRIGGER after_appointment_cancel
             AFTER UPDATE ON appointments
@@ -77,10 +78,7 @@ return new class extends Migration
             END;
         ");
 
-        // --- NEW COMPREHENSIVE TRIGGERS ---
-
-        // 5. Trigger: Prevent Duplicate Active Appointments
-        // Ensures a patient can't book the same doctor on the same schedule twice.
+        // 5. Prevent duplicate active appointments for the same patient on the same schedule
         DB::unprepared("
             CREATE TRIGGER before_appointment_duplicate_check
             BEFORE INSERT ON appointments
@@ -96,23 +94,23 @@ return new class extends Migration
             END;
         ");
 
-        // 6. Trigger: Data Lock
-        // Prevents changing crucial details once an appointment is finished.
+        // 6. Data Lock: Prevent edits to crucial fields if appointment is already finished or cancelled
         DB::unprepared("
             CREATE TRIGGER before_appointment_update_lock
             BEFORE UPDATE ON appointments
             FOR EACH ROW
             BEGIN
-                IF OLD.status IN ('Completed', 'Cancelled') AND NEW.status = OLD.status THEN
+                -- If the record is already final, block EVERYTHING
+                IF OLD.status IN ('Completed', 'Cancelled') THEN
                     SIGNAL SQLSTATE '45000'
-                    SET MESSAGE_TEXT = 'Error: Completed or Cancelled appointments cannot be modified.';
+                    SET MESSAGE_TEXT = 'Error: This appointment is finalized and cannot be modified.';
                 END IF;
             END;
         ");
 
-        // --- COMPREHENSIVE VIEWS ---
+        // --- VIEWS ---
 
-        // 1. YOUR ORIGINAL VIEW: Master List
+        // 1. Appointment Master List: A flat view of everything related to an appointment
         DB::unprepared("
             CREATE VIEW View_Appointment_Master_List AS
             SELECT 
@@ -120,8 +118,9 @@ return new class extends Migration
                 A.reference_number,
                 A.status AS appointment_status,
                 A.booking_timestamp,
-                CONCAT(P.first_name, ' ', P.last_name) AS patient_full_name,
-                P.contact_number AS patient_phone,
+                -- Concat using your new split name fields
+                CONCAT(P.first_name, ' ', IFNULL(P.middle_name, ''), ' ', P.last_name) AS patient_full_name,
+                P.philhealth_id AS philhealth_number, -- Changed from contact_number
                 CONCAT(S.first_name, ' ', S.last_name) AS doctor_name,
                 S.specialization AS doctor_field,
                 D.department_name,
@@ -138,30 +137,20 @@ return new class extends Migration
             LEFT JOIN invoices I ON A.appointment_id = I.appointment_id;
         ");
 
-        // 2. NEW VIEW: Daily Department Load
-        // Useful for Admins to see which departments are overbooked today.
+        // 2. Daily Department Load: See how busy departments are for each date
         DB::unprepared("
             CREATE VIEW View_Daily_Department_Load AS
             SELECT 
                 D.department_name,
                 Sch.schedule_date,
-                COUNT(A.appointment_id) as total_appointments,
                 Sch.max_capacity,
+                Sch.current_booked,
                 (Sch.max_capacity - Sch.current_booked) as slots_remaining
             FROM departments D
-            JOIN schedules Sch ON D.department_id = Sch.department_id
-            LEFT JOIN appointments A ON Sch.schedule_id = A.schedule_id
-            GROUP BY 
-                D.department_id, 
-                D.department_name, 
-                Sch.schedule_id, 
-                Sch.schedule_date, 
-                Sch.max_capacity, 
-                Sch.current_booked;
+            JOIN schedules Sch ON D.department_id = Sch.department_id;
         ");
 
-        // 3. NEW VIEW: Doctor Availability Finder
-        // Quick look-up for the front desk to see who has slots left.
+        // 3. Available Doctors: Shows only doctors who have slots left today or in the future
         DB::unprepared("
             CREATE VIEW View_Available_Doctors AS
             SELECT 

@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HMS Admin | Medical Management</title>
     
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
@@ -21,6 +20,29 @@
             --border-color: oklch(0.922 0 0);
             --radius: 0.625rem;
             --font-muted: #64748b;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Prevents the whole body from scrolling */
+        }
+
+        .sidebar {
+            height: 100vh;
+            overflow-y: auto; /* Sidebar can scroll if links are too many */
+        }
+
+        .main-wrapper {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            flex: 1;
+            overflow-y: auto; /* Only the content area scrolls, not the header */
+            padding: 24px;
         }
 
         body { 
@@ -258,6 +280,10 @@
 
         .btn-secondary:hover { background: var(--sidebar-accent); }
 
+        .btn-secondary:hover { 
+            border-color: #9b9b9b; 
+        }
+
         .btn-danger {
             background: #ffffff;
             color: #dc2626;
@@ -280,71 +306,71 @@
         .badge-pending { background: #fef9c3; color: #854d0e; }
 
         /* --- Appointment/Details Card Design --- */
-.details-card {
-    background: #ffffff;
-    padding: 32px;
-    border-radius: var(--radius);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    margin-bottom: 24px;
-}
+        .details-card {
+            background: #ffffff;
+            padding: 32px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+            margin-bottom: 24px;
+        }
 
-.details-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 20px;
-    margin-bottom: 24px;
-}
+        .details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+        }
 
-.label-sm {
-    color: var(--font-muted);
-    text-transform: uppercase;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    display: block;
-    margin-bottom: 4px;
-}
+        .label-sm {
+            color: var(--font-muted);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            display: block;
+            margin-bottom: 4px;
+        }
 
-.details-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 32px;
-}
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
 
-.info-section {
-    margin-bottom: 24px;
-}
+        .info-section {
+            margin-bottom: 24px;
+        }
 
-.info-title {
-    color: var(--sidebar-fg);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    font-size: 0.95rem;
-    margin-bottom: 12px;
-    border-left: 3px solid var(--primary-blue);
-    padding-left: 12px;
-}
+        .info-title {
+            color: var(--sidebar-fg);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--primary-blue);
+            padding-left: 12px;
+        }
 
-.info-content {
-    margin-left: 15px;
-    font-size: 0.9rem;
-    line-height: 1.6;
-    color: #475569;
-}
+        .info-content {
+            margin-left: 15px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #475569;
+        }
 
-.meta-box {
-    background: var(--sidebar-accent);
-    padding: 16px;
-    border-radius: var(--radius);
-    border: 1px solid var(--border-color);
-    font-size: 0.8rem;
-    color: var(--font-muted);
-}
+        .meta-box {
+            background: var(--sidebar-accent);
+            padding: 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            color: var(--font-muted);
+        }
     </style>
 </head>
 <body>
@@ -352,13 +378,16 @@
     <aside class="sidebar">
         <div class="sidebar-brand">
             <i class="bi bi-hospital"></i>
-            <span>HMS Pro</span>
+            <span>Appointer</span>
         </div>
 
         <nav>
             <h2>Management</h2>
             <a href="{{ route('departments.index') }}" class="{{ request()->is('departments*') ? 'active' : '' }}">
                 <i class="bi bi-building"></i> Departments
+            </a>
+            <a href="{{ route('services.index') }}" class="{{ request()->is('services*') ? 'active' : '' }}">
+                <i class="bi bi-activity"></i> Hospital Services
             </a>
             <a href="{{ route('staff.index') }}" class="{{ request()->is('staff*') ? 'active' : '' }}">
                 <i class="bi bi-person-badge"></i> Medical Staff
@@ -386,7 +415,7 @@
     <div class="main-wrapper">
         <header class="navbar">
             <div style="font-weight: 600; font-size: 1rem; color: var(--font-muted);">
-                {{ Str::headline(request()->segment(1) ?? 'Dashboard') }}
+                @yield('page_title', Str::headline(request()->segment(1) ?? 'Dashboard'))
             </div>
         </header>
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException; // Required import
 
 class DepartmentController extends Controller
 {
@@ -57,8 +58,34 @@ class DepartmentController extends Controller
 
     public function destroy($id)
     {
-        $department = Department::findOrFail($id);
-        $department->delete();
-        return redirect()->route('departments.index')->with('success', 'Department removed.');
+        try {
+            $department = Department::findOrFail($id);
+            $department->delete();
+            
+            return redirect()->route('departments.index')->with('success', 'Department removed.');
+        } catch (QueryException $e) {
+            // Handle Custom Trigger (45000) or Foreign Key Constraint (23000)
+            if ($e->getCode() == '45000') {
+                return back()->with('error', $this->getTriggerMessage($e));
+            }
+
+            if ($e->getCode() == '23000') {
+                return back()->with('error', 'Cannot delete this department. It still contains active staff members or medical schedules.');
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Helper to extract the custom message from the SQL Trigger Error
+     */
+    private function getTriggerMessage(QueryException $e)
+    {
+        if (preg_match('/1644 (.*?) \(Connection:/', $e->getMessage(), $matches)) {
+            return $matches[1];
+        }
+        
+        return "Database Restriction: " . ($e->errorInfo[2] ?? 'Operation blocked by system rules.');
     }
 }

@@ -30,27 +30,53 @@
             <tr>
                 <td><span style="color: var(--font-muted); font-weight: 600;">#{{ $invoice->invoice_id }}</span></td>
                 <td><span class="badge" style="background: var(--sidebar-accent); color: var(--primary-blue);">{{ $invoice->appointment->reference_number }}</span></td>
-                <td><strong style="color: var(--primary-blue);">{{ $invoice->appointment->patient->first_name }} {{ $invoice->appointment->patient->last_name }}</strong></td>
-                <td><strong style="font-size: 1rem;">${{ number_format($invoice->total_amount, 2) }}</strong></td>
+                <td>
+                    <strong style="color: var(--primary-blue);">
+                        {{ $invoice->appointment->patient->last_name }}, 
+                        {{ $invoice->appointment->patient->first_name }} 
+                        {{ $invoice->appointment->patient->suffix !== 'None' ? $invoice->appointment->patient->suffix : '' }}
+                    </strong>
+                </td>
+                <td><strong style="font-size: 1rem;">₱{{ number_format($invoice->total_amount, 2) }}</strong></td>
                 <td>
                     @php 
-                        $statusClass = strtolower(str_replace(' ', '-', $invoice->payment_status));
-                        $isPaid = $invoice->payment_status === 'Paid';
+                        $status = $invoice->payment_status;
+                        $badgeClass = match($status) {
+                            'Paid' => 'badge-success',
+                            'Unpaid' => 'badge-danger',
+                            'Partially Paid' => 'badge-info',
+                            'Cancelled' => 'badge-secondary',
+                            default => 'badge-secondary'
+                        };
+                        
+                        $icon = match($status) {
+                            'Paid' => 'bi-check-circle-fill',
+                            'Unpaid' => 'bi-exclamation-circle-fill',
+                            'Partially Paid' => 'bi-clock-history',
+                            'Cancelled' => 'bi-x-circle-fill',
+                            default => 'bi-question-circle'
+                        };
                     @endphp
-                    <span class="badge {{ $isPaid ? 'badge-success' : 'badge-danger' }}" style="text-transform: uppercase; font-size: 0.7rem;">
-                        <i class="bi {{ $isPaid ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill' }}"></i> {{ $invoice->payment_status }}
+                    <span class="badge {{ $badgeClass }}" style="text-transform: uppercase; font-size: 0.7rem;">
+                        <i class="bi {{ $icon }}"></i> {{ $status }}
                     </span>
                 </td>
                 <td>{{ \Carbon\Carbon::parse($invoice->issued_date)->format('M d, Y') }}</td>
+                
                 <td style="text-align: right;">
-                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                        <a href="{{ route('invoices.show', $invoice->invoice_id) }}" class="btn btn-secondary" title="View Details">
-                            <i class="bi bi-file-earmark-pdf"></i> View
+                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                        <a href="{{ route('invoices.show', $invoice->invoice_id) }}" class="btn btn-secondary" title="View">
+                            <i class="bi bi-eye"></i>
                         </a>
+
+                        <a href="{{ route('invoices.edit', $invoice->invoice_id) }}" class="btn btn-secondary" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+
                         <form action="{{ route('invoices.destroy', $invoice->invoice_id) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this invoice?')" title="Delete">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this invoice?')" title="Delete">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </form>

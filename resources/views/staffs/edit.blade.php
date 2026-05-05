@@ -1,5 +1,11 @@
 @extends('layout')
 
+@section('page_title')
+    <a href="{{ route('staff.index') }}" style="text-decoration: none; color: inherit;">Staff</a> 
+    <span style="margin: 0 8px; opacity: 0.5;">/</span> 
+    <span style="color: var(--primary-blue);">Edit</span>
+@endsection
+
 @section('content')
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <div>
@@ -27,6 +33,8 @@
         @csrf
         @method('PUT')
         
+        <h3 style="margin-bottom: 16px; color: var(--primary-blue); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Personal Information</h3>
+        
         <div class="form-row">
             <div class="form-group">
                 <label for="first_name">First Name</label>
@@ -34,10 +42,17 @@
             </div>
 
             <div class="form-group">
+                <label for="middle_name">Middle Name</label>
+                <input type="text" name="middle_name" id="middle_name" class="form-control" maxlength="50" value="{{ old('middle_name', $staffMember->middle_name) }}">
+            </div>
+
+            <div class="form-group">
                 <label for="last_name">Last Name</label>
                 <input type="text" name="last_name" id="last_name" class="form-control" required maxlength="50" value="{{ old('last_name', $staffMember->last_name) }}">
             </div>
         </div>
+
+        <h3 style="margin: 24px 0 16px; color: var(--primary-blue); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Professional Assignment</h3>
 
         <div class="form-row">
             <div class="form-group">
@@ -67,7 +82,7 @@
         <div class="form-row">
             <div class="form-group form-group-full">
                 <label for="specialization">Specialization (Optional)</label>
-                <input type="text" name="specialization" id="specialization" class="form-control" maxlength="100" value="{{ old('specialization', $staffMember->specialization) }}">
+                <input type="text" name="specialization" id="specialization" class="form-control" maxlength="100" value="{{ old('specialization', $staffMember->specialization) }}" placeholder="e.g. Cardiology, Pediatrics">
             </div>
         </div>
 

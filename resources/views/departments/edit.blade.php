@@ -1,5 +1,11 @@
 @extends('layout')
 
+@section('page_title')
+    <a href="{{ route('departments.index') }}" style="text-decoration: none; color: inherit;">Departments</a> 
+    <span style="margin: 0 8px; opacity: 0.5;">/</span> 
+    <span style="color: var(--primary-blue);">Edit</span>
+@endsection
+
 @section('content')
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <div>

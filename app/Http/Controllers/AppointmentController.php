@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\Staff;
 use App\Models\Schedule;
+use Illuminate\Database\QueryException;
 
 class AppointmentController extends Controller
 {
@@ -30,25 +31,30 @@ class AppointmentController extends Controller
             'patient_id' => 'required|exists:patients,patient_id',
             'schedule_id' => 'required|exists:schedules,schedule_id',
             'assigned_doctor_id' => 'required|exists:staff,staff_id',
+            'chief_complaint' => 'nullable|string',
         ]);
 
-        // Generate a unique reference number
-        $ref = 'APP-' . strtoupper(uniqid());
+        try {
+            $ref = 'APP-' . strtoupper(uniqid());
 
-        Appointment::create([
-            'reference_number' => $ref,
-            'patient_id' => $request->patient_id,
-            'schedule_id' => $request->schedule_id,
-            'assigned_doctor_id' => $request->assigned_doctor_id,
-            'status' => 'Pending'
-        ]);
+            Appointment::create([
+                'reference_number' => $ref,
+                'patient_id' => $request->patient_id,
+                'schedule_id' => $request->schedule_id,
+                'assigned_doctor_id' => $request->assigned_doctor_id,
+                'status' => 'Pending'
+            ]);
 
-        return redirect()->route('appointments.index')->with('success', 'Appointment booked successfully!');
+            return redirect()->route('appointments.index')->with('success', 'Appointment booked successfully!');
+        } catch (QueryException $e) {
+            return back()->withInput()->with('error', $this->getTriggerMessage($e));
+        }
     }
 
     public function edit($id)
     {
         $appointment = Appointment::findOrFail($id);
+
         $patients = Patient::all();
         $doctors = Staff::where('role', 'Doctor')->get();
         $schedules = Schedule::with('department')->get();
@@ -63,12 +69,17 @@ class AppointmentController extends Controller
             'schedule_id' => 'required|exists:schedules,schedule_id',
             'assigned_doctor_id' => 'required|exists:staff,staff_id',
             'status' => 'required|in:Pending,Confirmed,Completed,Cancelled',
+            'chief_complaint' => 'nullable|string',
         ]);
 
-        $appointment = Appointment::findOrFail($id);
-        $appointment->update($request->all());
+        try {
+            $appointment = Appointment::findOrFail($id);
+            $appointment->update($request->all());
 
-        return redirect()->route('appointments.index')->with('success', 'Appointment updated successfully!');
+            return redirect()->route('appointments.index')->with('success', 'Appointment updated successfully!');
+        } catch (QueryException $e) {
+            return back()->withInput()->with('error', $this->getTriggerMessage($e));
+        }
     }
 
     public function show($id)
@@ -79,8 +90,25 @@ class AppointmentController extends Controller
 
     public function destroy($id)
     {
-        $appointment = Appointment::findOrFail($id);
-        $appointment->delete();
-        return redirect()->route('appointments.index')->with('success', 'Appointment removed.');
+        try {
+            $appointment = Appointment::findOrFail($id);
+            $appointment->delete();
+            return redirect()->route('appointments.index')->with('success', 'Appointment removed.');
+        } catch (QueryException $e) {
+            return back()->with('error', 'Cannot delete this record. It may be linked to an existing invoice.');
+        }
+    }
+
+    /**
+     * Helper to extract the custom message from the SQL Trigger Error
+     */
+    private function getTriggerMessage(QueryException $e)
+    {
+        if ($e->getCode() == '45000') {
+            if (preg_match('/Error: (.*?) \(Connection:/', $e->getMessage(), $matches)) {
+                return $matches[1];
+            }
+        }
+        return 'A database error occurred while processing your request.';
     }
 }

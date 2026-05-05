@@ -12,16 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
+            $table->id('user_id');
+            $table->string('first_name', 50);
+            $table->string('middle_name', 50)->nullable();
+            $table->string('last_name', 50);
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-
             $table->enum('role', ['Patient', 'Staff', 'Admin'])->default('Patient');
-            $table->foreignId('patient_id')->nullable()->constrained('patients', 'patient_id')->onDelete('cascade');
-            $table->foreignId('staff_id')->nullable()->constrained('staff', 'staff_id')->onDelete('cascade');
-            
+            $table->foreignId('patient_id')->unique()->nullable()->constrained('patients', 'patient_id')->onDelete('set null');
+            $table->foreignId('staff_id')->unique()->nullable()->constrained('staff', 'staff_id')->onDelete('set null');
             $table->rememberToken();
             $table->timestamps();
         });

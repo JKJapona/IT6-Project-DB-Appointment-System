@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Schedule;
 use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 
 class ScheduleController extends Controller
 {
@@ -61,10 +62,36 @@ class ScheduleController extends Controller
         return view('schedules.show', compact('schedule'));
     }
 
-    public function destroy($id)
+public function destroy($id)
     {
-        $schedule = Schedule::findOrFail($id);
-        $schedule->delete();
-        return redirect()->route('schedules.index')->with('success', 'Schedule deleted.');
+        try {
+            $schedule = Schedule::findOrFail($id);
+            $schedule->delete();
+            
+            return redirect()->route('schedules.index')->with('success', 'Schedule deleted.');
+        } catch (QueryException $e) {
+            // Handle Custom Trigger (45000) or Foreign Key Constraint (23000)
+            if ($e->getCode() == '45000') {
+                return back()->with('error', $this->getTriggerMessage($e));
+            }
+
+            if ($e->getCode() == '23000') {
+                return back()->with('error', 'Cannot delete this schedule. It is currently linked to active patient appointments.');
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Helper to extract the custom message from the SQL Trigger Error
+     */
+    private function getTriggerMessage(QueryException $e)
+    {
+        if (preg_match('/1644 (.*?) \(Connection:/', $e->getMessage(), $matches)) {
+            return $matches[1];
+        }
+        
+        return "Database Restriction: " . ($e->errorInfo[2] ?? 'Operation blocked by system rules.');
     }
 }

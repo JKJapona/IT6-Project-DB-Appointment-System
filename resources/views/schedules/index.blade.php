@@ -11,6 +11,16 @@
     </a>
 </div>
 
+@if (session('error'))
+    <div style="background: #fef2f2; border: 1px solid #dc2626; color: #991b1b; padding: 16px; border-radius: 8px; margin-bottom: 24px; font-size: 0.875rem; display: flex; align-items: center; gap: 12px;">
+        <i class="bi bi-shield-lock-fill" style="font-size: 1.25rem; color: #dc2626;"></i>
+        <div>
+            <div style="font-weight: 700;">System Security Restriction</div>
+            {{ session('error') }}
+        </div>
+    </div>
+@endif
+
 <div class="table-container">
     <table>
         <thead>

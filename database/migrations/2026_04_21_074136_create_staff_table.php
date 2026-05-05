@@ -14,13 +14,11 @@ return new class extends Migration
         Schema::create('staff', function (Blueprint $table) {
             $table->id('staff_id');
             $table->string('first_name', 50);
+            $table->string('middle_name', 50)->nullable();
             $table->string('last_name', 50);
-            $table->enum('role', ['Doctor', 'Nurse', 'Admissions Clerk', 'Admin'])->default('Admissions Clerk');
+            $table->enum('role', ['Doctor', 'Nurse', 'Admissions Clerk', 'Admin']);
             $table->string('specialization', 100)->nullable();
-            $table->foreignId('department_id')
-                  ->nullable()
-                  ->constrained('departments', 'department_id')
-                  ->onDelete('set null');
+            $table->foreignId('department_id')->nullable()->constrained('departments', 'department_id')->onDelete('set null');
             $table->timestamps();
         });
     }

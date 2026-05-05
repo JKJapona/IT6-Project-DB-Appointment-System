@@ -1,5 +1,11 @@
 @extends('layout')
 
+@section('page_title')
+    <a href="{{ route('user_accounts.index') }}" style="text-decoration: none; color: inherit;">User Accounts</a> 
+    <span style="margin: 0 8px; opacity: 0.5;">/</span> 
+    <span style="color: var(--primary-blue);">Details</span>
+@endsection
+
 @section('content')
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <div>
@@ -15,11 +21,11 @@
     <div class="details-header">
         <div>
             <span class="label-sm">Account ID</span>
-            <h2 style="margin: 0; color: var(--primary-blue); font-size: 1.75rem;">#{{ $user->id }}</h2>
+            <h2 style="margin: 0; color: var(--primary-blue); font-size: 1.75rem;">#{{ $user->user_id }}</h2>
         </div>
         <div style="text-align: right;">
             <span class="label-sm">Access Level</span>
-            <span class="badge {{ $user->role == 'Admin' ? 'badge-danger' : 'badge-primary' }}">
+            <span class="badge {{ $user->role == 'Admin' ? 'badge-danger' : ($user->role == 'Staff' ? 'badge-info' : 'badge-primary') }}">
                 <i class="bi bi-shield-lock-fill" style="font-size: 0.5rem; vertical-align: middle; margin-right: 5px;"></i>
                 {{ $user->role }}
             </span>
@@ -32,7 +38,7 @@
             <div class="info-section">
                 <div class="info-title">Account Information</div>
                 <div class="info-content">
-                    <strong>Full Name:</strong> {{ $user->name }}<br>
+                    <strong>Full Name:</strong> {{ $user->first_name }} {{ $user->middle_name }} {{ $user->last_name }}<br>
                     <strong>Email Address:</strong> {{ $user->email }}<br>
                     <strong>Status:</strong> <span style="color: #059669; font-weight: 600;">Active</span>
                 </div>
@@ -41,12 +47,14 @@
             <div class="info-section">
                 <div class="info-title">Linked Profile</div>
                 <div class="info-content">
-                    @if($user->role == 'Patient' && $user->patient)
+                    @if($user->role == 'Patient' && $user->patient_id)
                         <strong>Type:</strong> Patient Profile<br>
-                        <strong>Linked Name:</strong> {{ $user->patient->first_name }} {{ $user->patient->last_name }}
-                    @elseif(($user->role == 'Staff' || $user->role == 'Admin') && $user->staff)
+                        <strong>Linked Name:</strong> {{ $user->patient->first_name }} {{ $user->patient->last_name }} {{ $user->patient->suffix !== 'None' ? $user->patient->suffix : '' }}<br>
+                        <strong>Patient ID:</strong> #{{ $user->patient_id }}
+                    @elseif(($user->role == 'Staff' || $user->role == 'Admin') && $user->staff_id)
                         <strong>Type:</strong> Staff Record<br>
-                        <strong>Linked Name:</strong> {{ $user->staff->first_name }} {{ $user->staff->last_name }}
+                        <strong>Linked Name:</strong> {{ $user->staff->first_name }} {{ $user->staff->last_name }}<br>
+                        <strong>Position:</strong> {{ $user->staff->role }} ({{ $user->staff->specialization ?: 'General' }})
                     @else
                         <strong>Status:</strong> <span style="color: var(--font-muted);">No profile link found</span>
                     @endif
@@ -63,7 +71,7 @@
                         <i class="bi bi-calendar-plus"></i> <strong>Registered:</strong> {{ $user->created_at?->format('M d, Y - h:i A') ?? 'N/A' }}
                     </div>
                     <div>
-                        <i class="bi bi-clock-history"></i> <strong>Last Update:</strong> {{ $user->updated_at?->diffForHumans() ?? 'N/A' }}
+                        <i class="bi bi-clock-history"></i> <strong>Last Update:</strong> {{ $user->updated_at ? $user->updated_at->diffForHumans() : 'N/A' }}
                     </div>
                 </div>
             </div>
@@ -72,11 +80,11 @@
 </div>
 
 <div class="actions" style="display: flex; gap: 12px; align-items: center; margin-top: 20px;">
-    <a href="{{ route('user_accounts.edit', $user->id) }}" class="btn btn-primary">
+    <a href="{{ route('user_accounts.edit', $user->user_id) }}" class="btn btn-primary">
         <i class="bi bi-pencil-square"></i> Edit Account
     </a>
     
-    <form action="{{ route('user_accounts.destroy', $user->id) }}" method="POST" style="margin-left: auto;">
+    <form action="{{ route('user_accounts.destroy', $user->user_id) }}" method="POST" style="margin-left: auto;">
         @csrf
         @method('DELETE')
         <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to permanently delete this user account?')">

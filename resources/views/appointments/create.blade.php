@@ -1,5 +1,11 @@
 @extends('layout')
 
+@section('page_title')
+    <a href="{{ route('appointments.index') }}" style="text-decoration: none; color: inherit;">Appointments</a> 
+    <span style="margin: 0 8px; opacity: 0.5;">/</span> 
+    <span style="color: var(--primary-blue);">Add</span>
+@endsection
+
 @section('content')
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <div>
@@ -35,7 +41,7 @@
                     <option value="" disabled selected>-- Search Patient by Name or ID --</option>
                     @foreach($patients as $patient)
                         <option value="{{ $patient->patient_id }}" {{ old('patient_id') == $patient->patient_id ? 'selected' : '' }}>
-                            {{ $patient->first_name }} {{ $patient->last_name }} (ID: {{ $patient->patient_id }})
+                            {{ $patient->last_name }}, {{ $patient->first_name }} {{ $patient->suffix !== 'None' ? $patient->suffix : '' }} (ID: {{ $patient->patient_id }})
                         </option>
                     @endforeach
                 </select>
@@ -50,7 +56,7 @@
                     <option value="" disabled selected>-- Select Practitioner --</option>
                     @foreach($doctors as $doctor)
                         <option value="{{ $doctor->staff_id }}" {{ old('assigned_doctor_id') == $doctor->staff_id ? 'selected' : '' }}>
-                            Dr. {{ $doctor->first_name }} {{ $doctor->last_name }} ({{ $doctor->specialization }})
+                            Dr. {{ $doctor->first_name }} {{ $doctor->last_name }} ({{ $doctor->specialization ?: 'General Practice' }})
                         </option>
                     @endforeach
                 </select>
@@ -70,18 +76,26 @@
             </div>
         </div>
 
+        {{-- Chief Complaint - New Field for 3NF alignment --}}
+        <div class="form-row">
+            <div class="form-group form-group-full">
+                <label for="chief_complaint">Chief Complaint</label>
+                <textarea name="chief_complaint" id="chief_complaint" class="form-control" rows="3" placeholder="Enter the primary reason for the patient's visit...">{{ old('chief_complaint') }}</textarea>
+            </div>
+        </div>
+
         {{-- Info Box --}}
         <div class="meta-box" style="margin-top: 8px;">
             <p style="margin: 0; display: flex; gap: 10px; align-items: flex-start;">
                 <i class="bi bi-info-circle-fill" style="color: var(--primary-blue); font-size: 1.1rem;"></i>
-            <span>
-                <strong>Auto-Generation:</strong> A unique Reference Number will be automatically generated upon submission. 
-                The appointment status will be set to 
-                <span class="badge badge-pending" style="display: inline-flex; align-items: center; vertical-align: middle; line-height: 1; padding: 4px 8px; margin: 0 2px;">
-                    Pending
-                </span> 
-                by default.
-            </span>
+                <span>
+                    <strong>Auto-Generation:</strong> A unique Reference Number will be automatically generated upon submission. 
+                    The appointment status will be set to 
+                    <span class="badge badge-pending" style="display: inline-flex; align-items: center; vertical-align: middle; line-height: 1; padding: 4px 8px; margin: 0 2px;">
+                        Pending
+                    </span> 
+                    by default.
+                </span>
             </p>
         </div>
 

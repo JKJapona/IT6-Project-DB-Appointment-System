@@ -26,8 +26,10 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
+    $request->validate([
+            'first_name' => 'required|string|max:50',
+            'middle_name' => 'nullable|string|max:50',
+            'last_name' => 'required|string|max:50',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'role' => 'required|in:Patient,Staff,Admin',
@@ -36,7 +38,9 @@ class UserController extends Controller
         ]);
 
         User::create([
-            'name' => $request->name,
+            'first_name' => $request->first_name,
+            'middle_name' => $request->middle_name,
+            'last_name' => $request->last_name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
@@ -68,16 +72,22 @@ class UserController extends Controller
     public function update(Request $request, User $user_account)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:50',
+            'middle_name' => 'nullable|string|max:50',
+            'last_name' => 'required|string|max:50',
             'email' => 'required|email|unique:users,email,' . $user_account->id,
+            'password' => 'required|min:6',
             'role' => 'required|in:Patient,Staff,Admin',
             'staff_id' => 'required_if:role,Staff,Admin|nullable|exists:staff,staff_id',
             'patient_id' => 'required_if:role,Patient|nullable|exists:patients,patient_id',
         ]);
 
         $user_account->update([
-            'name' => $request->name,
+            'first_name' => $request->first_name,
+            'middle_name' => $request->middle_name,
+            'last_name' => $request->last_name,
             'email' => $request->email,
+            'password' => Hash::make($request->password),
             'role' => $request->role,
             'staff_id' => $request->staff_id,
             'patient_id' => $request->patient_id,

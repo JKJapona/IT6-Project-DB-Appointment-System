@@ -1,5 +1,11 @@
 @extends('layout')
 
+@section('page_title')
+    <a href="{{ route('patients.index') }}" style="text-decoration: none; color: inherit;">Patients</a> 
+    <span style="margin: 0 8px; opacity: 0.5;">/</span> 
+    <span style="color: var(--primary-blue);">Details</span>
+@endsection
+
 @section('content')
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <div>
@@ -32,15 +38,33 @@
             <div class="info-section">
                 <div class="info-title">Personal Information</div>
                 <div class="info-content">
-                    <strong>Full Name:</strong> {{ $patient->first_name }} {{ $patient->last_name }}<br>
-                    <strong>Contact:</strong> {{ $patient->contact_number ?: 'N/A' }}
+                    <strong>PhilHealth ID:</strong> {{ $patient->philhealth_id ?: 'N/A' }}<br>
+                    <strong>Full Name:</strong> {{ $patient->first_name }} {{ $patient->middle_name }} {{ $patient->last_name }} {{ $patient->suffix !== 'None' ? $patient->suffix : '' }}<br>
+                    <strong>Date of Birth:</strong> {{ \Carbon\Carbon::parse($patient->date_of_birth)->format('F d, Y') }}<br>
+                    <strong>Gender:</strong> {{ $patient->gender }}
+                </div>
+            </div>
+
+            <div class="info-section">
+                <div class="info-title">Parental Details</div>
+                <div class="info-content">
+                    <strong>Father:</strong> {{ $patient->fathers_first_name }} {{ $patient->fathers_last_name }} {{ $patient->fathers_suffix !== 'None' ? $patient->fathers_suffix : '' }}<br>
+                    <strong>Mother:</strong> {{ $patient->mothers_first_name }} {{ $patient->mothers_last_name }} {{ $patient->mothers_suffix !== 'None' ? $patient->mothers_suffix : '' }}
                 </div>
             </div>
 
             <div class="info-section">
                 <div class="info-title">Medical History</div>
                 <div class="info-content" style="line-height: 1.6; color: var(--font-main);">
-                    {{ $patient->medical_history ?: 'No medical history recorded for this patient.' }}
+                    @forelse($patient->medicalHistories as $history)
+                        <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0;">
+                            <strong style="color: var(--primary-blue);">{{ $history->condition_name }}</strong> 
+                            <span style="font-size: 0.75rem; color: var(--font-muted);">({{ $history->date_recorded ? \Carbon\Carbon::parse($history->date_recorded)->format('M Y') : 'N/A' }})</span><br>
+                            <span style="font-size: 0.875rem;">{{ $history->notes }}</span>
+                        </div>
+                    @empty
+                        <p style="margin: 0; color: var(--font-muted);">No medical history recorded for this patient.</p>
+                    @endforelse
                 </div>
             </div>
         </div>

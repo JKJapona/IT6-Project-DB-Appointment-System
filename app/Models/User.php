@@ -2,24 +2,45 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role', 'patient_id', 'staff_id'])]
-#[Hidden(['password', 'remember_token'])]
-
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
     /**
+     * The primary key associated with the table.
+     * Overriding 'id' to match your SQL schema.
+     */
+    protected $primaryKey = 'user_id';
+
+    /**
+     * The attributes that are mass assignable.
+     * Reflecting the split name fields from your 3NF design.
+     */
+    protected $fillable = [
+        'first_name', 
+        'middle_name', 
+        'last_name', 
+        'email', 
+        'password', 
+        'role', 
+        'patient_id', 
+        'staff_id'
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
      * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
      */
     protected function casts(): array
     {
@@ -29,13 +50,19 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Relationship to the Patients table.
+     */
     public function patient()
     {
-        return $this->belongsTo(Patient::class, 'patient_id');
+        return $this->belongsTo(Patient::class, 'patient_id', 'patient_id');
     }
 
+    /**
+     * Relationship to the Staff table.
+     */
     public function staff()
     {
-        return $this->belongsTo(Staff::class, 'staff_id');
+        return $this->belongsTo(Staff::class, 'staff_id', 'staff_id');
     }
 }

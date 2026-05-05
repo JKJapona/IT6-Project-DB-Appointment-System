@@ -12,4 +12,12 @@ class Department extends Model
     public function staff() {
         return $this->hasMany(Staff::class, 'department_id');
     }
+
+    public function services() {
+        return $this->hasMany(Service::class, 'department_id');
+    }
+
+    public function schedules() {
+        return $this->hasMany(Schedule::class, 'department_id');
+    }
 }

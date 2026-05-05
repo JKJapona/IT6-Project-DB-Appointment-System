@@ -1,5 +1,11 @@
 @extends('layout')
 
+@section('page_title')
+    <a href="{{ route('invoices.index') }}" style="text-decoration: none; color: inherit;">Invoices</a> 
+    <span style="margin: 0 8px; opacity: 0.5;">/</span> 
+    <span style="color: var(--primary-blue);">Edit</span>
+@endsection
+
 @section('content')
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <div>
@@ -30,27 +36,32 @@
         
         <div class="form-row">
             {{-- Read-only Reference --}}
-            <div class="form-group">
-                <label>Reference Appointment</label>
-                <input type="text" class="form-control" value="{{ $invoice->appointment->reference_number }} — {{ $invoice->appointment->patient->first_name }} {{ $invoice->appointment->patient->last_name }}" disabled style="background-color: var(--sidebar-accent); cursor: not-allowed;">
+            <div class="form-group form-group-full">
+                <label>Reference Appointment & Patient</label>
+                <input type="text" class="form-control" 
+                    value="{{ $invoice->appointment->reference_number }} — {{ $invoice->appointment->patient->last_name }}, {{ $invoice->appointment->patient->first_name }} {{ $invoice->appointment->patient->middle_name }} {{ $invoice->appointment->patient->suffix !== 'None' ? $invoice->appointment->patient->suffix : '' }}" 
+                    disabled style="background-color: var(--sidebar-accent); cursor: not-allowed;">
             </div>
+        </div>
 
-            {{-- Amount --}}
-            <div class="form-group">
-                <label for="total_amount">Total Amount ($)</label>
-                <input type="number" step="0.01" name="total_amount" id="total_amount" class="form-control" value="{{ old('total_amount', $invoice->total_amount) }}" required>
-            </div>
+        <div class="form-row">
 
             {{-- Status --}}
             <div class="form-group">
                 <label for="payment_status">Payment Status</label>
                 <select name="payment_status" id="payment_status" class="form-control" required>
-                    @foreach(['Unpaid', 'Partially Paid', 'Paid', 'Cancelled'] as $status)
+                    @foreach(['Unpaid', 'Paid', 'Partially Paid', 'Cancelled'] as $status)
                         <option value="{{ $status }}" {{ old('payment_status', $invoice->payment_status) == $status ? 'selected' : '' }}>
                             {{ $status }}
                         </option>
                     @endforeach
                 </select>
+            </div>
+
+            {{-- Date Issued (Read-only for Edit) --}}
+            <div class="form-group">
+                <label>Date Issued</label>
+                <input type="text" class="form-control" value="{{ \Carbon\Carbon::parse($invoice->issued_date)->format('M d, Y - h:i A') }}" disabled style="background-color: var(--sidebar-accent);">
             </div>
         </div>
 

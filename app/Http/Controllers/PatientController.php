@@ -30,11 +30,18 @@ class PatientController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'first_name' => 'required|max:50',
-            'last_name' => 'required|max:50',
-            'contact_number' => 'nullable|max:15',
-            'medical_history' => 'nullable',
-        ]);
+                'philhealth_id' => 'nullable|string|max:20',
+                'first_name' => 'required|string|max:50',
+                'middle_name' => 'nullable|string|max:50',
+                'last_name' => 'required|string|max:50',
+                'suffix' => 'required|in:None,Jr,Sr,I,II,III,IV',
+                'date_of_birth' => 'required|date',
+                'gender' => 'required|in:Male,Female',
+                'fathers_first_name' => 'nullable|string|max:50',
+                'fathers_last_name' => 'nullable|string|max:50',
+                'mothers_first_name' => 'nullable|string|max:50',
+                'mothers_last_name' => 'nullable|string|max:50',
+            ]);
 
         Patient::create($validatedData);
 
@@ -46,6 +53,7 @@ class PatientController extends Controller
      */
     public function show(Patient $patient)
     {
+        $patient->load('medicalHistories');
         return view('patients.show', compact('patient'));
     }
 
@@ -63,10 +71,17 @@ class PatientController extends Controller
     public function update(Request $request, Patient $patient)
     {
         $validatedData = $request->validate([
-            'first_name' => 'required|max:50',
-            'last_name' => 'required|max:50',
-            'contact_number' => 'nullable|max:15',
-            'medical_history' => 'nullable',
+                'philhealth_id' => 'nullable|string|max:20',
+                'first_name' => 'required|string|max:50',
+                'middle_name' => 'nullable|string|max:50',
+                'last_name' => 'required|string|max:50',
+                'suffix' => 'required|in:None,Jr,Sr,I,II,III,IV',
+                'date_of_birth' => 'required|date',
+                'gender' => 'required|in:Male,Female',
+                'fathers_first_name' => 'nullable|string|max:50',
+                'fathers_last_name' => 'nullable|string|max:50',
+                'mothers_first_name' => 'nullable|string|max:50',
+                'mothers_last_name' => 'nullable|string|max:50',
         ]);
 
         $patient->update($validatedData);

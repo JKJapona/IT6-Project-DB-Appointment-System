@@ -1,5 +1,11 @@
 @extends('layout')
 
+@section('page_title')
+    <a href="{{ route('staff.index') }}" style="text-decoration: none; color: inherit;">Staff</a> 
+    <span style="margin: 0 8px; opacity: 0.5;">/</span> 
+    <span style="color: var(--primary-blue);">Details</span>
+@endsection
+
 @section('content')
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <div>
@@ -32,7 +38,7 @@
             <div class="info-section">
                 <div class="info-title">Personal Information</div>
                 <div class="info-content">
-                    <strong>Full Name:</strong> {{ $staffMember->first_name }} {{ $staffMember->last_name }}<br>
+                    <strong>Full Name:</strong> {{ $staffMember->first_name }} {{ $staffMember->middle_name }} {{ $staffMember->last_name }}<br>
                     <strong>System Role:</strong> {{ $staffMember->role }}
                 </div>
             </div>
@@ -63,7 +69,7 @@
     </div>
 </div>
 
-<div class="actions" style="display: flex; gap: 12px; align-items: center;">
+<div class="actions" style="display: flex; gap: 12px; align-items: center; margin-top: 20px;">
     <a href="{{ route('staff.edit', $staffMember->staff_id) }}" class="btn btn-primary">
         <i class="bi bi-pencil-square"></i> Edit Profile
     </a>
@@ -71,7 +77,7 @@
     <form action="{{ route('staff.destroy', $staffMember->staff_id) }}" method="POST" style="margin-left: auto;">
         @csrf
         @method('DELETE')
-        <button type="submit" class="btn btn-danger" onclick="return confirm('Remove this staff record?')">
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Remove this staff record? This action cannot be undone.')">
             <i class="bi bi-trash"></i> Delete Record
         </button>
     </form>

@@ -1,5 +1,11 @@
 @extends('layout')
 
+@section('page_title')
+    <a href="{{ route('invoices.index') }}" style="text-decoration: none; color: inherit;">Invoices</a> 
+    <span style="margin: 0 8px; opacity: 0.5;">/</span> 
+    <span style="color: var(--primary-blue);">Add</span>
+@endsection
+
 @section('content')
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <div>
@@ -30,23 +36,15 @@
         {{-- Appointment Selection --}}
         <div class="form-row">
             <div class="form-group form-group-full">
-                <label for="appointment_id">Select Appointment (Ref # - Patient)</label>
+                <label for="appointment_id">Select Appointment (Ref # — Patient Name)</label>
                 <select name="appointment_id" id="appointment_id" class="form-control" required>
                     <option value="" disabled selected>-- Select Appointment --</option>
                     @foreach($appointments as $app)
                         <option value="{{ $app->appointment_id }}" {{ old('appointment_id') == $app->appointment_id ? 'selected' : '' }}>
-                            {{ $app->reference_number }} — {{ $app->patient->first_name }} {{ $app->patient->last_name }}
+                            {{ $app->reference_number }} — {{ $app->patient->last_name }}, {{ $app->patient->first_name }} {{ $app->patient->suffix !== 'None' ? $app->patient->suffix : '' }}
                         </option>
                     @endforeach
                 </select>
-            </div>
-        </div>
-
-        {{-- Amount and Status --}}
-        <div class="form-row">
-            <div class="form-group">
-                <label for="total_amount">Total Amount ($)</label>
-                <input type="number" step="0.01" name="total_amount" id="total_amount" class="form-control" placeholder="0.00" required value="{{ old('total_amount') }}">
             </div>
 
             <div class="form-group">
@@ -55,9 +53,12 @@
                     <option value="Unpaid" {{ old('payment_status') == 'Unpaid' ? 'selected' : '' }}>Unpaid</option>
                     <option value="Partially Paid" {{ old('payment_status') == 'Partially Paid' ? 'selected' : '' }}>Partially Paid</option>
                     <option value="Paid" {{ old('payment_status') == 'Paid' ? 'selected' : '' }}>Paid</option>
+                    <option value="Cancelled" {{ old('payment_status') == 'Cancelled' ? 'selected' : '' }}>Cancelled</option>
                 </select>
             </div>
         </div>
+
+
 
         {{-- Form Actions --}}
         <div style="margin-top: 32px; border-top: 1px solid var(--border-color); padding-top: 24px; display: flex; justify-content: flex-end;">

@@ -44,9 +44,10 @@
                     </small>
                 </td>
                 <td>
-                    <span class="badge {{ $app->status == 'Completed' ? 'badge-success' : ($app->status == 'Cancelled' ? 'badge-danger' : 'badge-pending') }}">
-                        {{ $app->status }}
-                    </span>
+<span class="badge {{ $app->status == 'Completed' ? 'badge-info' : ($app->status == 'Cancelled' ? 'badge-danger' : ($app->status == 'Confirmed' ? 'badge-success' : 'badge-pending')) }}" 
+      style="{{ $app->status == 'Completed' ? 'background-color: rgba(0, 123, 255, 0.1); color: #004085;' : '' }}">
+    {{ $app->status }}
+</span>
                 </td>
                 <td style="text-align: right;">
                     <div style="display: flex; gap: 8px; justify-content: flex-end;">

@@ -1,5 +1,11 @@
 @extends('layout')
 
+@section('page_title')
+    <a href="{{ route('appointments.index') }}" style="text-decoration: none; color: inherit;">Appointments</a> 
+    <span style="margin: 0 8px; opacity: 0.5;">/</span> 
+    <span style="color: var(--primary-blue);">Details</span>
+@endsection
+
 @section('content')
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <div>
@@ -19,8 +25,9 @@
         </div>
         <div style="text-align: right;">
             <span class="label-sm">Booking Status</span>
-            <span class="badge {{ $appointment->status == 'Completed' ? 'badge-success' : ($appointment->status == 'Cancelled' ? 'badge-danger' : 'badge-pending') }}">
-                <i class="bi bi-circle-fill" style="font-size: 0.5rem; vertical-align: middle; margin-right: 5px;"></i>
+            <span class="badge {{ $appointment->status == 'Completed' ? 'badge-info' : ($appointment->status == 'Cancelled' ? 'badge-danger' : ($appointment->status == 'Confirmed' ? 'badge-success' : 'badge-pending')) }}" 
+                style="{{ $appointment->status == 'Completed' ? 'background-color: rgba(0, 123, 255, 0.1); color: #004085;' : '' }}">
+                <i class="bi bi-circle-fill" style="font-size: 0.5rem; vertical-align: middle; margin-right: 5px; {{ $appointment->status == 'Completed' ? 'color: #007bff;' : '' }}"></i>
                 {{ $appointment->status }}
             </span>
         </div>
@@ -32,8 +39,9 @@
             <div class="info-section">
                 <div class="info-title">Patient Information</div>
                 <div class="info-content">
-                    <strong>Name:</strong> {{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}<br>
-                    <strong>Contact:</strong> {{ $appointment->patient->contact_number }}
+                    <strong>PhilHealth ID:</strong> {{ $appointment->patient->philhealth_id ?: 'N/A' }}<br>
+                    <strong>Name:</strong> {{ $appointment->patient->first_name }} {{ $appointment->patient->middle_name }} {{ $appointment->patient->last_name }} {{ $appointment->patient->suffix !== 'None' ? $appointment->patient->suffix : '' }}<br>
+                    <strong>Gender:</strong> {{ $appointment->patient->gender }}
                 </div>
             </div>
 
@@ -41,7 +49,7 @@
                 <div class="info-title">Assigned Medical Staff</div>
                 <div class="info-content">
                     <strong>Doctor:</strong> Dr. {{ $appointment->doctor->first_name }} {{ $appointment->doctor->last_name }}<br>
-                    <strong>Specialization:</strong> {{ $appointment->doctor->specialization }}
+                    <strong>Specialization:</strong> {{ $appointment->doctor->specialization ?: 'General Practice' }}
                 </div>
             </div>
         </div>
@@ -56,25 +64,30 @@
                 </div>
             </div>
 
+            <div class="info-section">
+                <div class="info-title">Consultation Data</div>
+                <div class="info-content">
+                    <strong>Chief Complaint:</strong><br>
+                    <span style="color: var(--font-main);">{{ $appointment->chief_complaint ?: 'No complaint recorded.' }}</span>
+                </div>
+            </div>
+
             <div class="meta-box">
                 <div style="margin-bottom: 4px;">
-                    <i class="bi bi-clock-history"></i> <strong>Booked On:</strong> {{ $appointment->booking_timestamp }}
-                </div>
-                <div>
-                    <i class="bi bi-person-check"></i> <strong>Processed By:</strong> {{ $appointment->processor->first_name ?? 'System' }} {{ $appointment->processor->last_name ?? '' }}
+                    <i class="bi bi-clock-history"></i> <strong>Booked On:</strong> {{ \Carbon\Carbon::parse($appointment->booking_timestamp)->format('M d, Y - h:i A') }}
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="actions" style="display: flex; gap: 12px; align-items: center;">
+<div class="actions" style="display: flex; gap: 12px; align-items: center; margin-top: 20px;">
     <a href="{{ route('appointments.edit', $appointment->appointment_id) }}" class="btn btn-primary">
         <i class="bi bi-pencil-square"></i> Update Status
     </a>
     
-    @if($appointment->status == 'Completed')
-        <a href="{{ route('invoices.show', $appointment->invoice->invoice_id ?? '#') }}" class="btn" style="background: #10b981; color: white; border: none;">
+    @if($appointment->status == 'Completed' || $appointment->invoice)
+        <a href="{{ route('invoices.show', $appointment->invoice->invoice_id) }}" class="btn" style="background: #10b981; color: white; border: none;">
             <i class="bi bi-file-earmark-medical"></i> View Invoice
         </a>
     @endif

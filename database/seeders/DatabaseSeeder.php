@@ -6,7 +6,6 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,58 +16,79 @@ class DatabaseSeeder extends Seeder
     {
         $faker = \Faker\Factory::create();
 
-        // 1. SEED DEPARTMENTS
-        $departmentNames = ['Cardiology', 'Pediatrics', 'Neurology', 'General Medicine', 'Radiology', 'Surgery', 'ER'];
-        $departmentIds = [];
+        // 0. CLEANUP: Clear existing data
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('invoices')->truncate();
+        DB::table('appointments')->truncate();
+        DB::table('schedules')->truncate();
+        DB::table('users')->truncate();
+        DB::table('patients')->truncate();
+        DB::table('staff')->truncate();
+        DB::table('departments')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        foreach ($departmentNames as $name) {
+        // 1. SEED DEPARTMENTS (5)
+        $departmentIds = [];
+        $depts = ['Cardiology', 'Pediatrics', 'Neurology', 'General Medicine', 'Radiology'];
+
+        foreach ($depts as $name) {
             $departmentIds[] = DB::table('departments')->insertGetId([
                 'department_name' => $name,
-                'description' => "Specialized medical services for $name.",
+                'description' => "Specialized care and treatment for $name patients.",
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         }
 
-        // 2. SEED STAFF
+        // 2. SEED STAFF (5)
         $staffIds = [];
         $doctorIds = [];
         $roles = ['Doctor', 'Nurse', 'Admissions Clerk', 'Admin'];
 
-        for ($i = 0; $i < 20; $i++) {
-            $role = $faker->randomElement($roles);
-            $id = DB::table('staff')->insertGetId([
+        for ($i = 0; $i < 5; $i++) {
+            $role = ($i == 0) ? 'Doctor' : $faker->randomElement($roles); // Ensure at least one doctor
+            $sid = DB::table('staff')->insertGetId([
                 'first_name' => $faker->firstName,
                 'last_name' => $faker->lastName,
                 'role' => $role,
-                'specialization' => ($role == 'Doctor') ? $faker->jobTitle : null,
+                'specialization' => ($role == 'Doctor') ? $faker->randomElement(['Cardiologist', 'Surgeon', 'Physician']) : null,
                 'department_id' => $faker->randomElement($departmentIds),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-            $staffIds[] = $id;
-            if ($role == 'Doctor') $doctorIds[] = $id;
+            $staffIds[] = $sid;
+            if ($role == 'Doctor') $doctorIds[] = $sid;
         }
 
-        // 3. SEED PATIENTS
+        // 3. SEED PATIENTS (5)
         $patientIds = [];
-        for ($i = 0; $i < 20; $i++) {
+        for ($i = 0; $i < 5; $i++) {
             $patientIds[] = DB::table('patients')->insertGetId([
+                'philhealth_id' => $faker->numerify('##-#########-#'),
                 'first_name' => $faker->firstName,
+                'middle_name' => $faker->lastName, // Using faker lastName for middle name variety
                 'last_name' => $faker->lastName,
-                'contact_number' => $faker->numerify('09#########'),
-                'medical_history' => $faker->sentence,
+                'suffix' => 'None',
+                'date_of_birth' => $faker->date('Y-m-d', '2010-01-01'), // Older than 2010
+                'gender' => $faker->randomElement(['Male', 'Female']),
+                
+                // Parental info (Required by your schema logic)
+                'fathers_first_name' => $faker->firstNameMale,
+                'fathers_last_name' => $faker->lastName,
+                'mothers_first_name' => $faker->firstNameFemale,
+                'mothers_last_name' => $faker->lastName,
+                
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         }
 
-        // 4. SEED SCHEDULES
+        // 4. SEED SCHEDULES (5)
         $scheduleIds = [];
-        for ($i = 0; $i < 20; $i++) {
+        for ($i = 0; $i < 5; $i++) {
             $scheduleIds[] = DB::table('schedules')->insertGetId([
                 'department_id' => $faker->randomElement($departmentIds),
-                'schedule_date' => $faker->dateTimeBetween('now', '+1 month')->format('Y-m-d'),
+                'schedule_date' => $faker->dateTimeBetween('now', '+1 week')->format('Y-m-d'),
                 'max_capacity' => 10,
                 'current_booked' => 0,
                 'created_at' => now(),
@@ -76,51 +96,82 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 5. SEED APPOINTMENTS
+        // 5. SEED APPOINTMENTS (5)
         $appointmentIds = [];
-        for ($i = 0; $i < 20; $i++) {
-            $appointmentIds[] = DB::table('appointments')->insertGetId([
-                'reference_number' => 'REF-' . strtoupper(Str::random(6)),
-                'patient_id' => $faker->randomElement($patientIds),
-                'schedule_id' => $faker->randomElement($scheduleIds),
-                'assigned_doctor_id' => $faker->randomElement($doctorIds),
-                'processed_by_id' => $faker->randomElement($staffIds),
-                'status' => $faker->randomElement(['Pending', 'Confirmed', 'Completed', 'Cancelled']),
-                'booking_timestamp' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        for ($i = 0; $i < 5; $i++) {
+            try {
+                $appointmentIds[] = DB::table('appointments')->insertGetId([
+                    'reference_number' => 'REF-' . strtoupper(Str::random(8)),
+                    'patient_id' => $faker->randomElement($patientIds),
+                    'schedule_id' => $faker->randomElement($scheduleIds),
+                    'assigned_doctor_id' => $faker->randomElement($doctorIds),
+                    'processed_by_id' => $faker->randomElement($staffIds),
+                    'status' => $faker->randomElement(['Pending', 'Confirmed', 'Completed']),
+                    'booking_timestamp' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } catch (\Exception $e) {
+                // If the trigger blocks a duplicate patient/schedule combo, skip it
+                continue;
+            }
         }
 
-        // 6. SEED INVOICES
-        // Using each appointment once to satisfy the unique constraint
-        foreach ($appointmentIds as $appId) {
+        // 6. SEED INVOICES (5)
+        $availableApps = $appointmentIds;
+        shuffle($availableApps);
+        $invoiceCount = count($availableApps); // Might be less than 5 if some appointments failed
+
+        for ($i = 0; $i < $invoiceCount; $i++) {
             DB::table('invoices')->insert([
-                'appointment_id' => $appId,
-                'total_amount' => $faker->randomFloat(2, 100, 5000),
-                'payment_status' => $faker->randomElement(['Unpaid', 'Paid', 'Partially Paid']),
+                'appointment_id' => $availableApps[$i],
+                'total_amount' => $faker->randomFloat(2, 500, 2000),
+                'payment_status' => $faker->randomElement(['Unpaid', 'Paid']),
                 'issued_date' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         }
 
-        // 7. SEED USER ACCOUNTS
-        // Admin
-        DB::table('user_accounts')->insert([
+        // 7. SEED USERS (Total 10: 1 Admin, 4 Staff, 5 Patients)
+        
+        // 1 Admin Account
+        DB::table('users')->insert([
+            'first_name' => 'System',
+            'middle_name' => null,
+            'last_name' => 'Administrator',
             'email' => 'admin@hospital.com',
-            'password' => Hash::make('password123'),
+            'password' => Hash::make('password'),
             'role' => 'Admin',
             'created_at' => now(),
         ]);
 
-        // Staff Logins
-        foreach ($staffIds as $sId) {
-            DB::table('user_accounts')->insert([
-                'email' => "staff{$sId}@hospital.com",
-                'password' => Hash::make('password123'),
+        // 4 Staff Accounts
+        for ($i = 0; $i < 4; $i++) {
+            $staff = DB::table('staff')->where('staff_id', $staffIds[$i])->first();
+            DB::table('users')->insert([
+                'first_name' => $staff->first_name,
+                'middle_name' => $staff->middle_name,
+                'last_name' => $staff->last_name,
+                'email' => "staff{$i}@hospital.com",
+                'password' => Hash::make('password'),
                 'role' => 'Staff',
-                'staff_id' => $sId,
+                'staff_id' => $staff->staff_id,
+                'created_at' => now(),
+            ]);
+        }
+
+        // 5 Patient Accounts
+        for ($i = 0; $i < 5; $i++) {
+            $patient = DB::table('patients')->where('patient_id', $patientIds[$i])->first();
+            DB::table('users')->insert([
+                'first_name' => $patient->first_name,
+                'middle_name' => $patient->middle_name,
+                'last_name' => $patient->last_name,
+                'email' => "patient{$i}@patient.com",
+                'password' => Hash::make('password'),
+                'role' => 'Patient',
+                'patient_id' => $patient->patient_id,
                 'created_at' => now(),
             ]);
         }
